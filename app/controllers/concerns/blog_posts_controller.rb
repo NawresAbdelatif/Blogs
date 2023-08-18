@@ -1,4 +1,8 @@
 class BlogPostsController < ApplicationController 
+
+    before_action :authenticate_user!, except: [:index, :show]
+    before_action :set_blog_post , except: [:index, :new, :create] #only [:show , :edit, :update :destroy]
+
     def index 
 
         @blog_posts=BlogPost.all
@@ -6,37 +10,48 @@ class BlogPostsController < ApplicationController
     end
 
 
-    def show
-        @blog_post=BlogPost.find(params[:id])
-    rescue ActiveRecord::RecordNotFound
-        redirect_to root_path
+    def show 
+   
     end
 
     def new 
         @blog_post=BlogPost.new
+        @form_title = "Create a New Blog"
+        @form_button_text = "Submit"
     end
 
     def create
-        @blog_post=BlogPost.new(blog_post_params)
-       if  @blog_post.save
-        redirect_to @blog_post
-       else
-        render :new, status: :unprocessable_entity
-       end 
-    end 
+        @blog_post = BlogPost.new(blog_post_params)
+        if user_signed_in? && @blog_post.save
+          redirect_to @blog_post
+        else
+          render :new, status: :unprocessable_entity
+        end  
+      end
 
     def edit
-         @blog_post=BlogPost.find(params[:id])
+     
+         @form_title = "Edit a Blog"
+         @form_button_text = "Update"
      end
 
      def update 
-        @blog_post=BlogPost.find(params[:id])
-        if @blog_post.update(blog_post_params)
-            redirect_to @blog_post
+        if user_signed_in? && @blog_post.update(blog_post_params)
+          redirect_to @blog_post
         else
-            render :edit, status: :unprocessable_entity
+          render :edit, status: :unprocessable_entity
         end
-    end
+      end
+
+  
+      def destroy
+        if user_signed_in?
+          @blog_post.destroy
+          redirect_to root_path, notice: "Blog post successfully deleted."
+        else
+          redirect_to root_path, alert: "You need to be signed in to perform this action."
+        end
+      end
 
     private
 
@@ -45,5 +60,12 @@ class BlogPostsController < ApplicationController
     end
 
 
+    def set_blog_post
+    @blog_post = BlogPost.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+        redirect_to root_path
+    end
+def authenticate_user!redirect_to new_user_session_path, alert: "You must sign in or sign up to continue." unless user_signed_in?
+end
 
 end
